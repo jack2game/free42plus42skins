@@ -14,12 +14,81 @@ cat - << EOF
     .crumb:active { text-decoration: none; }
     .crumb:hover { text-decoration: underline; }
   </style>
+  <script>
+    var lastSortKey = "sk_name";
+    var sortDirection = { "sk_name": true, "sk_date": false, "sk_pixels": false, "sk_width": false, "sk_height": false, "sk_aspect": false };
+
+    function sortList(which) {
+        var rows = document.getElementsByTagName("tr");
+        var header = [];
+        var list = [];
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            if (row.bgColor == "yellow") {
+                header.push(row);
+                list.push([]);
+            } else {
+                list[list.length - 1].push(row);
+            }
+        }
+
+        var label = document.getElementById(lastSortKey);
+        label.innerText = label.innerText.substring(0, label.innerText.length - 1);
+        var ascending = sortDirection[which];
+        if (which == lastSortKey) {
+            ascending = !ascending;
+            sortDirection[which] = ascending;
+        }
+        label = document.getElementById(which);
+        label.innerText += ascending ? "▲" : "▼";
+        lastSortKey = which;
+
+        for (var i = 0; i < list.length; i++) {
+            list[i].sort(function(a, b) {
+                    var pa = getKey(a, which);
+                    var pb = getKey(b, which);
+                    var res = pa.localeCompare(pb);
+                    return ascending ? res : -res;
+                });
+        }
+        var parent = rows[0].parentNode;
+        for (var i = 0; i < list.length; i++) {
+            parent.appendChild(header[i]);
+            for (var j = 0; j < list[i].length; j++) {
+                var item = list[i][j];
+                item.bgColor = j % 2 == 0 ? "#dddddd" : "#eeeeee";
+                parent.appendChild(item);
+            }
+        }
+    }
+
+    function getKey(item, which) {
+        if (which == "sk_name")
+            return item.childNodes[0].childNodes[0].innerText;
+        else if (which == "sk_date")
+            return item.childNodes[0].childNodes[3].childNodes[0].innerText;
+        var res = item.childNodes[0].childNodes[2].innerText;
+        var t = res.indexOf("x");
+        var u = res.indexOf(" ");
+        var x = +res.substring(0, t);
+        var y = +res.substring(t + 1, u);
+        var r;
+        switch (which) {
+            case "sk_pixels": r = x * y; break;
+            case "sk_width": r = x; break;
+            case "sk_height": r = y; break;
+            case "sk_aspect": r = Math.round((1000.0 * x) / y + 0.5); break;
+        }
+        r = "000000000" + r;
+        return r.substring(r.length - 9);
+    }
+  </script>
 </head>
 <body>
-  <h1>Free42 Skins</h1>
+  <h3>Free42 Skins</h3>
   <pre><a href="../.." class="crumb">Home</a> &gt; <a href=".." class="crumb">Free42</a> &gt; Skins</pre>
   <a href="README.html">README</a>
-  <p>
+  <pre>Sort by: <a href="javascript:sortList('sk_name')" class="crumb" id="sk_name">name▲</a> <a href="javascript:sortList('sk_date')" class="crumb" id="sk_date">date</a> <a href="javascript:sortList('sk_pixels')" class="crumb" id="sk_pixels">pixels</a> <a href="javascript:sortList('sk_width')" class="crumb" id="sk_width">width</a> <a href="javascript:sortList('sk_height')" class="crumb" id="sk_height">height</a> <a href="javascript:sortList('sk_aspect')" class="crumb" id="sk_aspect">aspect</a></pre>
   <table border="0" cellpadding="10">
 EOF
 prevdir=null
@@ -28,7 +97,18 @@ do
     dir=`dirname $layout`
     base=`basename $layout .layout`
     gif=$dir/${base}.gif
-    size=`grep '^Skin:' $layout | sed 's/^Skin: 0,0,\([^,]*\),\([^,]*\).*$/\1x\2/'`
+    size=`grep '^Skin:' $layout | sed 's/^Skin: 0,0,\([0-9]*\),\([0-9]*\).*$/\1x\2/'`
+    width=`echo $size | sed 's/^\([^x]*\)x.*$/\1/'`
+    height=`echo $size | sed 's/^[^x]*x\(.*\)$/\1/'`
+    if [ $width -eq $height ]
+    then
+        size="$size (1:1)"
+    elif [ $width -lt $height ]
+    then
+        size="$size (1:`echo "scale=2; $height / $width" | bc`)"
+    else
+        size="$size (`echo "scale=2; $width / $height" | bc`:1)"
+    fi
     if [ ! -f $gif ]
     then
         continue
@@ -73,7 +153,18 @@ do
         title=`echo "$title" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g'`
         title="title=\"${title}\""
     fi
-    echo "    <tr bgcolor=\"#$color\" $title><td><b>$base</b><br><font size=\"-1\">$size</font></td><td align=\"center\"><a href=\"$gif\"><img src=\"$thumb\" width=\"$width\" height=\"$height\"></a></td><td><a href=\"$gif\">view gif</a><br><a href=\"$layout\">view layout</a><p><a href=\"$gif\" download>download gif</a><br><a href=\"$layout\" download>download layout</a></td></tr>"
+    layout_ds=`git log --follow $dir/${base}.layout | awk 'BEGIN { d = ""; f = 0 }; /Date:/ { if (d == "") { d = $0 }; f++}; /Created subdirectories/ { if (f == 1) { d = "" }}; END { print d }'`
+    layout_d=`date -jf 'Date: %a %b %d %H:%M:%S %Y %z' '+%Y-%m-%d' "$layout_ds"`
+    gif_ds=`git log --follow $dir/${base}.gif | awk 'BEGIN { d = ""; f = 0 }; /Date:/ { if (d == "") { d = $0 }; f++}; /Created subdirectories/ { if (f == 1) { d = "" }}; END { print d }'`
+    gif_d=`date -jf 'Date: %a %b %d %H:%M:%S %Y %z' '+%Y-%m-%d' "$gif_ds"`
+    date=`(echo $layout_d; echo $gif_d) | sort | tail -1`
+    if [ -f $dir/${base}.zip ]
+    then
+        zip_link="<p><b><font color=\"red\">Support files:</font> <a href=\"$dir/${base}.zip\">zip</a></b>"
+    else
+        zip_link=""
+    fi
+    echo "    <tr bgcolor=\"#$color\" $title><td><b>$base</b><br><font size=\"-1\">$size<p>Last Updated: $date</font>$zip_link</td><td align=\"center\"><a href=\"$gif\"><img src=\"$thumb\" width=\"$width\" height=\"$height\"></a></td><td><a href=\"$gif\">view gif</a><br><a href=\"$layout\">view layout</a><p><a href=\"$gif\" download>download gif</a><br><a href=\"$layout\" download>download layout</a></td></tr>"
     if [ $color = "dddddd" ]
     then
         color=eeeeee
@@ -85,5 +176,6 @@ cat - << EOF
   </table>
   <p>
   <a href="..">Go to Free42 home page</a>
+</body>
 </html>
 EOF
