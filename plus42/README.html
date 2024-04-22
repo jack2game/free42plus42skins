@@ -26,11 +26,7 @@ named plus42 or plus42/skins under any of the directories in $XDG_DATA_DIRS, or
 /usr/local/share:/usr/share if XDG_DATA_DIRS is unset or empty.
 
 On Android, use Main Menu -&gt; Select Skin -&gt; Load to load skins from this web
-site. Or, alternatively, on Android 10 or earlier, put the skins wherever you
-like; remember the location, and, in Plus42, choose Main Menu -&gt; Skin:
-Other, and use the file selection dialog to locate and select the desired
-skin's layout file. On Android 11 or later, this procedure only works with skins
-stored in /sdcard/Android/data/com.thomasokken.plus42/files.
+site.
 
 On iOS, use Main Menu -&gt; Select Skin -&gt; Load to load skins from this web site.
 Or, alternatively, upload them to the device manually. This is done as follows:
@@ -132,10 +128,10 @@ Flags: The "flags" line is a combination of these options: 1 = put FCN on the
   the other way around; and 4 = put TVM on Shift-0 instead of TOP.FCN. When
   there is no "flags," that's the same as Flags: 0.
 
-Finally, Plus42 can change the X&lt;&gt;Y, E, period, and R/S keys, to (, ), period/
-comma, and =, respectively, while the equation editor is active. To specify the
-alternate sections of skin background, and the alternate pressed-key images,
-use the AltBkgd and AltKey elements:
+Finally, Plus42 can change the X&lt;&gt;Y, +/-, period, and R/S keys, to (, ),
+period/comma, and =, respectively, while the equation editor is active. To
+specify the alternate sections of skin background, and the alternate pressed-
+key images, use the AltBkgd and AltKey elements:
 
 AltBkgd: mode src_rect dst_point
   Defines an image to be overlaid on the skin when the given mode is in effect.

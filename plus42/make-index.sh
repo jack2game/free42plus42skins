@@ -6,6 +6,7 @@ cat - << EOF
 <head>
   <title>Plus42 Skins</title>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,user-scalable=no"/>
   <link rel="icon" type="image/png" href="../images/plus42-icon.png">
   <style>
     .crumb { color: DeepPink }
@@ -99,7 +100,7 @@ do
     dir=`dirname $layout`
     base=`basename $layout .layout`
     gif=$dir/${base}.gif
-    size=`grep '^Skin:' $layout | sed 's/^Skin: 0,0,\([0-9]*\),\([0-9]*\).*$/\1x\2/'`
+    size=`grep '^Skin:' $layout | sed 's/^Skin: [0-9]*,[0-9]*,\([0-9]*\),\([0-9]*\).*$/\1x\2/'`
     width=`echo $size | sed 's/^\([^x]*\)x.*$/\1/'`
     height=`echo $size | sed 's/^[^x]*x\(.*\)$/\1/'`
     if [ $width -eq $height ]
